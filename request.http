@@ -1,0 +1,6 @@
+POST http://localhost:5000/video/viz
+content-type:application/json 
+
+{
+    "id":"phEQXAMHmzw"
+}
