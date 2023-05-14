@@ -66,7 +66,7 @@ export const evaluateComments = async (comments) => {
               JSON.stringify(rawComments),
               {
                 headers: {
-                  Authorization: `Bearer ${HUGGING_FACE_API_TOKEN}`,
+                  Authorization: `Bearer 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`,
                 },
               }
             )
@@ -99,7 +99,7 @@ export const evaluateComments = async (comments) => {
             JSON.stringify(comments),
             {
               headers: {
-                Authorization: `Bearer ${HUGGING_FACE_API_TOKEN}`,
+                Authorization: `Bearer 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`,
               },
             }
           )
