@@ -5,7 +5,6 @@ import dotenv from "dotenv";
 dotenv.config({ path: "./config.env" });
 
 export const getComments = async (id) => {
-  console.log(id);
   let cursor = "";
   const options = {
     method: "GET",
@@ -40,7 +39,6 @@ export const getComments = async (id) => {
 };
 
 export const evaluateComments = async (comments) => {
-  console.log(comments);
   try {
     if (comments.status !== 200 || comments.data.length === 0) {
       return {
@@ -59,7 +57,7 @@ export const evaluateComments = async (comments) => {
             i * maxBatchLength,
             maxBatchLength * (i + 1)
           );
-          console.log(rawComments);
+
           const resp = await axios
             .post(
               "https://api-inference.huggingface.co/models/arpanghoshal/EmoRoBERTa",
@@ -77,14 +75,13 @@ export const evaluateComments = async (comments) => {
                 status: 500,
               };
             });
-          console.log("Eval comments");
+
           // Push the batch into evaluated comments
           const data = await resp?.data;
 
           if (data && resp?.status === 200) {
             // Connect all raw comments to their emotion
             for (let i = 0; i < data.length; i++) {
-              console.log(data.length === rawComments.length);
               data[i].push([rawComments[i]]);
             }
             // push batch of data (which consists of the comments and emotion)
@@ -110,9 +107,9 @@ export const evaluateComments = async (comments) => {
               status: 500,
             };
           });
-        console.log("Eval comments");
+
         const data = await resp?.data;
-        console.log(resp);
+
         // If no data recieved then send model is busy.
         if (data && resp?.status === 200) {
           // Connect all raw comments to their emotion
@@ -132,7 +129,7 @@ export const evaluateComments = async (comments) => {
       }
       // flatten the array
       evalComments = evalComments.flat();
-      console.log(evalComments);
+
       return {
         message: "Comments evaluated successfully",
         data: evalComments,
@@ -199,7 +196,7 @@ i.e this one ==> [Object], [Object], [Object],
                   ]
                 ]
     */
-    console.log(allEmotionsFromResponse);
+
     for (let j = 0; j < allEmotionsFromResponse[i].length; j++) {
       // If the score is significant enough
       if (allEmotionsFromResponse[i][j].score > 0.5) {
@@ -215,7 +212,6 @@ i.e this one ==> [Object], [Object], [Object],
         );
       }
     }
-    console.log(cumulativeEmotions);
   }
   // normalize the intensity and frequency
   for (let i = 0; i < 28; i++) {
@@ -251,9 +247,9 @@ export const vizData = async (req, res) => {
     const { id } = req.body;
     const comments = await getComments(id);
     const emotions = await evaluateComments(comments);
-    console.log("emotions length is" + emotions.data.length);
+
     const evalEmotion = await evaluateEmotion(emotions);
-    console.log(evalEmotion);
+
     if (evalEmotion.status !== 500) {
       res.json({
         message: `total ${comments.data.length} comments analysed `,
