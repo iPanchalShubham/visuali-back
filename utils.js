@@ -59,3 +59,8 @@ export const allEmotions = [
   "neutral",
   "realization",
 ];
+export const sleep = (duration)=>{
+        return new Promise((resolve)=>{
+            setTimeout(resolve,duration)
+        })
+}

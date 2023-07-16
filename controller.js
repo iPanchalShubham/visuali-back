@@ -1,5 +1,5 @@
 import axios from "axios";
-import { allEmotions, cumulativeEmotions } from "./utils.js";
+import { allEmotions, cumulativeEmotions, sleep } from "./utils.js";
 import { comData } from "./array.js";
 import dotenv from "dotenv";
 dotenv.config({ path: "./config.env" });
@@ -51,6 +51,9 @@ export const evaluateComments = async (comments) => {
       let evalComments = [];
       const maxBatchLength = 10;
       if (comments.length >= maxBatchLength) {
+        /*A handy dandy tip for devs using async/await in for loop :
+        => When you use await, you expect JavaScript to pause execution until the awaited promise gets resolved. This means awaits in a for-loop should get executed in series.
+        */
         // divide the comments into bataches of maxBatchLength (i.e 70) or less
         for (let i = 0; i <= Math.ceil(comments.length / maxBatchLength); i++) {
           const rawComments = comments.slice(
@@ -241,33 +244,77 @@ i.e this one ==> [Object], [Object], [Object],
   graphData.length = 5;
   return { message: "Success", data: graphData, status: 200 };
 };
-
+// Handy Dandy tip while using res.write()
+// When using res.write() to send data, it's important to note that it doesn't guarantee that each call will result in a single chunk being sent. In some cases, multiple res.write() calls can be combined into a single chunk. To ensure that each piece of data is treated as an individual chunk, it's common to append a '\n' separator at the end of each chunk. This separator helps signify the boundaries between chunks and ensures that they are processed separately on the receiving end.
 export const vizData = async (req, res) => {
   try {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+    res.setHeader("Transfer-Encoding", "chunked");
+
     const { id } = req.body;
+    res.write(
+      JSON.stringify({
+        type: "loading",
+        message: `⛏️ Getting comments...`,
+        value: 0,
+        status: 200,
+      }) + "\n"
+    );
     const comments = await getComments(id);
+    res.write(
+      JSON.stringify({
+        type: "loading",
+        message: `🛠️ Evaluating ${comments.data.length}  retrieved comments...`,
+        value: 50,
+        status: 200,
+      }) + "\n"
+    );
     const emotions = await evaluateComments(comments);
-
+    await sleep(1000);
+    res.write(
+      JSON.stringify({
+        type: "loading",
+        message: `⚡Comments Evaluated into emotions...`,
+        value: 95,
+        status: 200,
+      }) + "\n"
+    );
     const evalEmotion = await evaluateEmotion(emotions);
-
+    await sleep(1000);
     if (evalEmotion.status !== 500) {
-      res.json({
-        message: `total ${comments.data.length} comments analysed `,
-        data: evalEmotion.data,
-        status: evalEmotion.status,
-      });
+      res.write(
+        JSON.stringify({
+          type: "response",
+          message: `total ${comments.data.length} comments analysed `,
+          data: evalEmotion.data,
+          status: evalEmotion.status,
+        }) + "\n"
+      );
+      res.end();
     } else {
-      res.json({
-        message: evalEmotion.message,
-        data: evalEmotion.data,
-        status: evalEmotion.status,
-      });
+      res.write(
+        JSON.stringify({
+          type: "response",
+          message: evalEmotion.message,
+          data: evalEmotion.data,
+          status: evalEmotion.status,
+        }) + "\n"
+      );
+      res.end();
     }
   } catch (error) {
-    res.json({
-      message: `${error.message} from viz comments`,
-      data: [],
-      status: 500,
-    });
+    console.log(error.message);
+    res.write(
+      JSON.stringify({
+        type: "response",
+        message: `${error.message} from viz comments`,
+        data: [],
+        status: 500,
+      }) + "\n"
+    );
+  } finally {
+    res.end();
   }
 };
