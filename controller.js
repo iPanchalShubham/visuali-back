@@ -251,68 +251,70 @@ export const vizData = async (req, res) => {
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
-    res.setHeader("Transfer-Encoding", "chunked");
 
     const { id } = req.body;
     res.write(
-      JSON.stringify({
+      `data:${JSON.stringify({
         type: "loading",
-        message: `⛏️ Getting comments...`,
+        message: "⛏️ Getting comments...",
         value: 0,
         status: 200,
-      }) + "\n"
+      })}\n\n`
     );
+    res.flush()
     const comments = await getComments(id);
     res.write(
-      JSON.stringify({
+      `data:${JSON.stringify({
         type: "loading",
         message: `🛠️ Evaluating ${comments.data.length}  retrieved comments...`,
         value: 50,
         status: 200,
-      }) + "\n"
+      })}\n\n`
     );
+    res.flush()
     const emotions = await evaluateComments(comments);
     await sleep(1000);
     res.write(
-      JSON.stringify({
+      `data:${JSON.stringify({
         type: "loading",
         message: `⚡Comments Evaluated into emotions...`,
         value: 95,
         status: 200,
-      }) + "\n"
+      })}\n\n`
     );
+    res.flush()
     const evalEmotion = await evaluateEmotion(emotions);
     await sleep(1000);
     if (evalEmotion.status !== 500) {
       res.write(
-        JSON.stringify({
+        `data:${JSON.stringify({
           type: "response",
           message: `total ${comments.data.length} comments analysed `,
           data: evalEmotion.data,
           status: evalEmotion.status,
-        }) + "\n"
+        })}\n\n`
       );
       res.end();
     } else {
       res.write(
-        JSON.stringify({
+        `data:${JSON.stringify({
           type: "response",
           message: evalEmotion.message,
           data: evalEmotion.data,
           status: evalEmotion.status,
-        }) + "\n"
+        })}\n\n`
       );
       res.end();
     }
   } catch (error) {
     console.log(error.message);
     res.write(
-      JSON.stringify({
+      `data:${JSON.stringify({
         type: "response",
         message: `${error.message} from viz comments`,
         data: [],
         status: 500,
-      }) + "\n"
+      })}\n\n`
     );
   } finally {
     res.end();
